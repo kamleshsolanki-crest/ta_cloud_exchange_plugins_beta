@@ -1,3 +1,7 @@
+# 1.1.0-debug
+## Added
+- Added debug logs.
+
 # 1.1.0
 ## Added
 - Added feature to dynamically add recipients.

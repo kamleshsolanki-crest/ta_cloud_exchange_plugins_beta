@@ -4,7 +4,7 @@
   "id": "notifier_itsm",
   "pulling_supported": false,
   "receiving_supported": true,
-  "version": "1.1.0-Debug",
+  "version": "1.1.0-debug",
   "configuration": [
     {
       "label": "Platform",
