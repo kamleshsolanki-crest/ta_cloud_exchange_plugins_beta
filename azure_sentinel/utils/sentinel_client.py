@@ -471,7 +471,7 @@ class AzureSentinelClient:
                 page_end_time = time.time()
                 total_count += len(result_data)
                 if not is_validation:
-                    log_msg = "[{}]:[{}] Successfully ingested {} {}(s) for page {} to {} in time {}.".format(
+                    log_msg = "[{}]:[{}] Successfully ingested {} {}(s) for page {} to {}. Time taken: {} second(s).".format(
                         data_type,
                         sub_type,
                         len(result_data),
@@ -483,7 +483,7 @@ class AzureSentinelClient:
                     self.logger.info(f"{self.log_prefix}: {log_msg}")
             end_time = time.time()
             if not is_validation:
-                log_msg = "[{}]:[{}] Successfully ingested {} {}(s) to {} in time {}.".format(
+                log_msg = "[{}]:[{}] Successfully ingested {} {}(s) to {}. Time taken: {} second(s).".format(
                     data_type,
                     sub_type,
                     total_count,
