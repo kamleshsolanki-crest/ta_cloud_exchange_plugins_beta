@@ -28,8 +28,10 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
 
-Syslog Validator."""
+"""CLS Google Chronicle Plugin Validator."""
+
 
 import io
 import csv
@@ -38,35 +40,14 @@ from jsonschema import validate
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 
 
-class SyslogValidator(object):
-    """Syslog validator class."""
+class ChronicleValidator(object):
+    """Chronicle validator class."""
 
     def __init__(self, logger, log_prefix):
         """Initialize."""
         super().__init__()
         self.logger = logger
         self.log_prefix = log_prefix
-
-    def validate_syslog_port(self, syslog_port):
-        """Validate syslog port.
-
-        Args:
-            syslog_port: the syslog port to be validated
-
-        Returns:
-            Whether the provided value is valid or not.
-            True in case of valid value, False otherwise
-        """
-        if syslog_port or syslog_port == 0:
-            try:
-                syslog_port = int(syslog_port)
-                if not (0 <= syslog_port <= 65535):
-                    return False
-                return True
-            except ValueError:
-                return False
-        else:
-            return False
 
     def validate_taxonomy(self, instance):
         """Validate the schema of given taxonomy JSON.
@@ -106,7 +87,7 @@ class SyslogValidator(object):
                         ".*": {
                             "type": "array",
                         }
-                    },
+                    }
                 },
             },
         }
@@ -122,8 +103,7 @@ class SyslogValidator(object):
         schema = {
             "type": "object",
             "properties": {
-                "delimiter": {"type": "string", "minLength": 1, "enum": ["|"]},
-                "cef_version": {"type": "string", "minLength": 1},
+                "udm_version": {"type": "string", "minLength": 1},
                 "taxonomy": {
                     "type": "object",
                     "properties": {
@@ -136,19 +116,20 @@ class SyslogValidator(object):
                     ],
                 },
             },
-            "required": ["delimiter", "taxonomy", "cef_version"],
+            "required": ["taxonomy", "udm_version"],
         }
 
         # If no exception is raised by validate(), the instance is valid.
         try:
             validate(instance=mappings, schema=schema)
         except JsonSchemaValidationError as err:
+            err_msg = (
+                "Validation error occurred. Error: "
+                "validating JSON schema: {}".format(err)
+            )
             self.logger.error(
-                message=(
-                    "{}: Validation error occurred. "
-                    "Error: validating JSON schema: {}".format(self.log_prefix, err)
-                ),
-                details=str(traceback.format_exc()),
+                message=f"{self.log_prefix}: {err_msg}",
+                details=str(traceback.format_exc())
             )
             return False
 
@@ -161,39 +142,39 @@ class SyslogValidator(object):
                     try:
                         self.validate_taxonomy(subtype_taxonomy)
                     except JsonSchemaValidationError as err:
+                        err_msg = (
+                            "Validation error occurred. Error: "
+                            'while validating JSON schema for type "{}" and subtype "{}": '
+                            "{}".format(data_type, subtype, err)
+                        )
                         self.logger.error(
-                            message=(
-                                "{}: Validation error occurred. Error: "
-                                'while validating JSON schema for type "{}" '
-                                'and subtype "{}": {}'.format(
-                                    self.log_prefix, data_type, subtype, err
-                                )
-                            ),
-                            details=str(traceback.format_exc()),
+                            message=f"{self.log_prefix}: {err_msg}",
+                            details=str(traceback.format_exc())
                         )
                         return False
-        return True
+            return True
 
-    def validate_syslog_map(self, mappings):
+    def validate_chronicle_map(self, mappings):
         """Validate field JSON mappings.
 
         Args:
             mappings: the JSON string to be validated
 
         Returns:
-            Whether the provided value is valid or not.
-            True in case of valid value, False otherwise
+            Whether the provided value is valid or not. True in case of valid value, False otherwise
         """
         if mappings is None:
             return False
         try:
             if self.validate_mapping_schema(mappings):
                 return True
-
         except Exception as err:
+            err_msg = (
+                "Validation error occurred. Error: {}".format(str(err))
+            )
             self.logger.error(
-                message=f"{self.log_prefix}: Validation error occurred. Error: {err}",
-                details=str(traceback.format_exc()),
+                message=f"{self.log_prefix}: {err_msg}",
+                details=str(traceback.format_exc())
             )
 
         return False
@@ -205,15 +186,17 @@ class SyslogValidator(object):
             valid_extensions: the CSV string to be validated
 
         Returns:
-            Whether the provided value is valid or not.
-            True in case of valid value, False otherwise
+            Whether the provided value is valid or not. True in case of valid value, False otherwise
         """
         try:
-            csviter = csv.DictReader(io.StringIO(valid_extensions), strict=True)
+            csviter = csv.DictReader(
+                io.StringIO(valid_extensions), strict=True
+            )
             headers = next(csviter)
 
             if all(
-                header in headers for header in ["CEF Key Name", "Length", "Data Type"]
+                header in headers
+                for header in ["UDM Key Name", "Length", "Data Type"]
             ):
                 return True
         except Exception:

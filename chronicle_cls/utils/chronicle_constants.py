@@ -28,21 +28,26 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
 
-Syslog Plugin constants."""
+"""CLS Google Chronicle Plugin constants."""
 
-PLATFORM_NAME = "Syslog"
 MODULE_NAME = "CLS"
-PLUGIN_VERSION = "3.2.2"
+PLUGIN_NAME = "Google Chronicle"
+PLUGIN_VERSION = "2.1.0 - debug"
 
-SYSLOG_PROTOCOLS = ["UDP", "TCP", "TLS"]
+DEFAULT_URL = {
+    "usa": "https://malachiteingestion-pa.googleapis.com",
+    "europe": "https://europe-malachiteingestion-pa.googleapis.com",
+    "asia": "https://asia-southeast1-malachiteingestion-pa.googleapis.com",
+}
+SCOPES = ["https://www.googleapis.com/auth/malachite-ingestion"]
 
 SEVERITY_LOW = "Low"
 SEVERITY_MEDIUM = "Medium"
 SEVERITY_HIGH = "High"
-SEVERITY_VERY_HIGH = "Very-High"
-SEVERITY_UNKNOWN = "Unknown"
-SEVERITY_INFO = "Info"
+SEVERITY_VERY_HIGH = "High"
+SEVERITY_UNKNOWN = "UNKNOWN_SEVERITY"
 
 SEVERITY_MAP = {
     "low": SEVERITY_LOW,
@@ -64,22 +69,25 @@ SEVERITY_MAP = {
     "10": SEVERITY_VERY_HIGH,
 }
 
-AUDIT_SEVERITY_MAP = {
-    "low": SEVERITY_LOW,
-    "med": SEVERITY_MEDIUM,
-    "medium": SEVERITY_MEDIUM,
-    "high": SEVERITY_HIGH,
-    "very-high": SEVERITY_HIGH,
-    "critical": SEVERITY_HIGH,
-    "0": SEVERITY_UNKNOWN,
-    "1": SEVERITY_HIGH,
-    "2": SEVERITY_MEDIUM,
-    "3": SEVERITY_UNKNOWN,
-    "4": SEVERITY_LOW,
-    "5": SEVERITY_UNKNOWN,
-    "6": SEVERITY_INFO,
-    "7": SEVERITY_UNKNOWN,
-    "8": SEVERITY_UNKNOWN,
-    "9": SEVERITY_UNKNOWN,
-    "10": SEVERITY_UNKNOWN,
-}
+DUMMY_DATA = [
+    {
+        "metadata": {
+            "event_timestamp": "2022-07-04T06:39:49Z",
+            "product_name": "Netskope Alert",
+            "product_version": "NULL",
+            "product_event_type": "[test] - test",
+            "event_type": "GENERIC_EVENT",
+            "product_log_id": "111111111111111111111111",
+            "vendor_name": "Netskope",
+            "description": "test",
+        },
+        "security_result": {"severity": "Low", "action_details": "no action"},
+        "principal": {
+            "user": {
+                "user_display_name": "testurl@xyz.com",
+                "userid": "testurl@xyz.com",
+                "email_addresses": "testurl@xyz.com",
+            }
+        },
+    }
+]

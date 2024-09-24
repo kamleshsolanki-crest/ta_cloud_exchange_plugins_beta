@@ -28,18 +28,13 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
 
-Exception class for syslog plugin."""
-
-
-class SyslogPluginError(Exception):
-    """CEF Format Error class."""
-
-    pass
+"""Exception class for CLS Google Chronicle Plugin."""
 
 
-class FormatCEFError(Exception):
-    """CEF Format Error class."""
+class FormatUDMError(Exception):
+    """UDM Format Error class."""
 
     pass
 
@@ -51,8 +46,7 @@ class Error(Exception):
 
 
 class ValidationError(Error):
-    """Exception raised for validation failures for
-    the parameters of docker-compose file.
+    """Exception raised for validation failures for the parameters of docker-compose file.
 
     :attribute: expression -- input expression in which the error occurred
     :attribute: message -- explanation of the error
@@ -64,7 +58,7 @@ class ValidationError(Error):
         self.message = message
 
 
-class CEFValueError(FormatCEFError, ValueError):
+class UDMValueError(FormatUDMError, ValueError):
     """Exception raised for invalid value mappings.
 
     Attributes:
@@ -76,9 +70,8 @@ class CEFValueError(FormatCEFError, ValueError):
         self.message = message
 
 
-class CEFTypeError(FormatCEFError, TypeError):
-    """Exception raised for data type mismatch between
-    mapped value and CEF fields.
+class UDMTypeError(FormatUDMError, TypeError):
+    """Exception raised for data type mismatch between mapped value and UDM fields.
 
     Attributes:
         message -- explanation of the error
@@ -102,7 +95,7 @@ class MappingValidationError(Exception):
 
 
 class EmptyExtensionError(Exception):
-    """Exception raised when extension is empty for generated CEF event."""
+    """Exception raised when extension is empty for generated UDM event."""
 
     pass
 
@@ -117,3 +110,9 @@ class FieldNotFoundError(Exception):
     def __init__(self, message):
         """Initialize."""
         self.message = message
+
+
+class GoogleChroniclePluginException(Exception):
+    """GoogleChroniclePlugin custom exception class."""
+
+    pass

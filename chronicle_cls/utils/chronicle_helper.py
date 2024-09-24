@@ -28,17 +28,22 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
 
-"Syslog Plugin Helper."""
+"""CLS Google Chronicle Plugin Helper."""
 
 
+import sys
 from jsonschema import validate
-from .syslog_exceptions import MappingValidationError
+
+from .chronicle_exceptions import (
+    MappingValidationError,
+)
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 
 
 def validate_extension(instance):
-    """Define JSON schema for validating mapped syslog extension fields.
+    """Define JSON schema for validating mapped chronicle extension fields.
 
     Args:
         instance: JSON instance to be validated
@@ -48,9 +53,8 @@ def validate_extension(instance):
     validate(instance=instance, schema=schema)
 
 
-def validate_header_extension_subdict(instance, name):
-    """Validate sub dict of header and extension
-    having fields "mapping" and "default".
+def validate_header_extension_subdict(instance):
+    """Validate sub dict of header and extension having fields "mapping" and "default".
 
     Args:
         instance: JSON instance to be validated
@@ -86,8 +90,8 @@ def validate_header_extension_subdict(instance, name):
         )
 
 
-def validate_header(instance, name):
-    """Define JSON schema for validating mapped syslog header fields.
+def validate_header(instance):
+    """Define JSON schema for validating mapped chronicle header fields.
 
     Args:
         instance: JSON instance to be validated
@@ -99,8 +103,7 @@ def validate_header(instance, name):
     }
 
     one_of_sub_schema = [
-        # both empty are not allowed.
-        # So schema will be: one of (one of (both), both)
+        # both empty are not allowed. So schema will be: one of (one of (both), both)
         {
             "oneOf": [
                 {"required": ["mapping_field"]},
@@ -126,24 +129,21 @@ def validate_header(instance, name):
     schema = {
         "type": "object",
         "properties": {
-            "Device Product": header_sub_schema,
-            "Device Vendor": header_sub_schema,
-            "Device Version": header_sub_schema,
-            "Device Event Class ID": header_sub_schema,
-            "Name": header_sub_schema,
-            "Severity": header_sub_schema,
+            "metadata.product_name": header_sub_schema,
+            "metadata.product_version": header_sub_schema,
+            "metadata.product_event_type": header_sub_schema,
+            "security_result.severity": header_sub_schema,
         },
     }
 
     validate(instance=instance, schema=schema)
 
-    # After validating schema, validate the "mapping"
-    # and "default" fields for each header fields
+    # After validating schema, validate the "mapping" and "default" fields for each header fields
     for field in instance:
-        validate_header_extension_subdict(instance[field], name)
+        validate_header_extension_subdict(instance[field])
 
 
-def validate_extension_field(instance, name):
+def validate_extension_field(instance):
     """Define JSON schema for validating each extension fields.
 
     Args:
@@ -154,14 +154,12 @@ def validate_extension_field(instance, name):
         "properties": {
             "mapping_field": {"type": "string"},
             "default_value": {"type": "string"},
-            "transformation": {"type": "string"},
             "is_json_path": {"type": "boolean"},
+            "transformation": {"type": "string"},
         },
         "minProperties": 0,
         "maxProperties": 4,
-        "oneOf": [
-            # both empty are not allowed.
-            # So schema will be: one of (one of (both), both)
+        "oneOf": [  # both empty are not allowed. So schema will be: one of (one of (both), both)
             {
                 "oneOf": [
                     {"required": ["mapping_field"]},
@@ -178,39 +176,33 @@ def validate_extension_field(instance, name):
     }
 
     validate(instance=instance, schema=schema)
-    validate_header_extension_subdict(instance, name)
+    validate_header_extension_subdict(instance)
 
 
-def get_syslog_mappings(mappings, data_type, name):
-    """Read mapping json and return the dict of mappings
-    to be applied to raw_data.
+def get_chronicle_mappings(mappings, data_type):
+    """Read mapping json and return the dict of mappings to be applied to raw_data.
 
     Args:
-        data_type (str): Data type (alert/event) for which
-        the mappings are to be fetched
+        data_type (str): Data type (alert/event) for which the mappings are to be fetched
         mappings: Attribute mapping json string
 
     Returns:
-        mapping delimiter, cef_version, syslog_mappings
+        mapping delimiter, cef_version, chronicle_mappings
     """
     data_type_specific_mapping = mappings["taxonomy"][data_type]
 
     if data_type == "json":
-        return (
-            mappings["delimiter"],
-            mappings["cef_version"],
-            mappings["taxonomy"],
-        )
+        return mappings["udm_version"], mappings["taxonomy"]
 
     # Validate the headers of each mapped subtype
     for subtype, subtype_map in data_type_specific_mapping.items():
         subtype_header = subtype_map["header"]
         try:
-            validate_header(subtype_header, name)
+            validate_header(subtype_header)
         except JsonSchemaValidationError as err:
             raise MappingValidationError(
-                "Error occurred while validating syslog header "
-                'for type "{}" Error: {}'.format(subtype, err)
+                'Error occurred while validating chronicle header for type "{}". '
+                "Error: {}".format(subtype, err)
             )
 
     # Validate the extension for each mapped subtype
@@ -220,32 +212,28 @@ def get_syslog_mappings(mappings, data_type, name):
             validate_extension(subtype_extension)
         except JsonSchemaValidationError as err:
             raise MappingValidationError(
-                "Error occurred while validating syslog extension "
-                'for type "{}". Error: {}'.format(subtype, err)
+                'Error occurred while validating chronicle extension for type "{}". '
+                "Error: {}".format(subtype, err)
             )
 
         # Validate each extension
         for cef_field, ext_dict in subtype_extension.items():
             try:
-                validate_extension_field(ext_dict, name)
+                validate_extension_field(ext_dict)
             except JsonSchemaValidationError as err:
                 raise MappingValidationError(
-                    "Error occurred while validating syslog extension "
-                    'field "{}" for type "{}". Error: {}'.format(
-                        cef_field, subtype, err
-                    )
+                    'Error occurred while validating chronicle extension field "{}" for '
+                    'type "{}". Error: {}'.format(cef_field, subtype, err)
                 )
 
-    return mappings["delimiter"], mappings["cef_version"], mappings["taxonomy"]
+    return mappings["udm_version"], mappings["taxonomy"]
 
 
 def extract_subtypes(mappings, data_type):
-    """Extract subtypes of given data types. e.g: for data type "alert",
-    possible subtypes are "dlp", "policy" etc.
+    """Extract subtypes of given data types. e.g: for data type "alert", possible subtypes are "dlp", "policy" etc.
 
     Args:
-        data_type (str): Data type (alert/event) for which
-        the mappings are to be fetched
+        data_type (str): Data type (alert/event) for which the mappings are to be fetched
         mappings: Attribute mapping json string
 
     Returns:
@@ -253,3 +241,33 @@ def extract_subtypes(mappings, data_type):
     """
     taxonomy = mappings["taxonomy"][data_type]
     return [subtype for subtype in taxonomy]
+
+
+def split_into_size(data_list):
+    """
+    Split a list into parts, each approximately with a target size in MB.
+
+    Parameters:
+    - data_list: The list of data to be split.
+
+    Returns:
+    A list of parts, each with a total size approximately equal to the target size.
+    """
+    result = []
+    current_part = []
+    current_size_mb = 0
+
+    for item in data_list:
+        item_size_mb = sys.getsizeof(f"{item}") / (1024 * 1024)  # Convert bytes to MB
+        if current_size_mb + item_size_mb <= 1:
+            current_part.append(item)
+            current_size_mb += item_size_mb
+        else:
+            result.append(current_part)
+            current_part = [item]
+            current_size_mb = item_size_mb
+
+    if current_part:
+        result.append(current_part)
+
+    return result
